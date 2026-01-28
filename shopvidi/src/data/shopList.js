@@ -94,11 +94,17 @@ export const isShopInList = (url) => {
 
 // 搜索匹配的店铺（用于自动补全）
 export const searchShops = (query) => {
-  if (!query || query.length < 1) return [];
+  // 无输入时返回全部店铺
+  if (!query || query.length < 1) {
+    return shopList; // 显示全部
+  }
   const cleaned = cleanUrl(query);
   return shopList.filter(shop =>
     shop.display.includes(cleaned)
-  ).slice(0, 8); // 最多返回 8 个结果
+  ); // 返回所有匹配结果
 };
+
+// 获取全部店铺列表
+export const getAllShops = () => shopList;
 
 export default shopList;

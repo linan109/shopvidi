@@ -31,15 +31,10 @@ const UrlInput = ({ onSubmit, disabled }) => {
     setError('');
     setSelectedIndex(-1);
 
-    // 搜索匹配的店铺
-    if (value.trim()) {
-      const matches = searchShops(value);
-      setSuggestions(matches);
-      setShowSuggestions(matches.length > 0);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
+    // 搜索匹配的店铺（空输入也会返回默认列表）
+    const matches = searchShops(value);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
   };
 
   // 选择建议项
@@ -52,6 +47,12 @@ const UrlInput = ({ onSubmit, disabled }) => {
 
   // 键盘导航
   const handleKeyDown = (e) => {
+    // Shift+Enter 不触发提交（符合其他平台习惯）
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      return;
+    }
+
     if (!showSuggestions || suggestions.length === 0) return;
 
     if (e.key === 'ArrowDown') {
@@ -121,42 +122,47 @@ const UrlInput = ({ onSubmit, disabled }) => {
       <div className="relative group">
         <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity duration-300" />
 
-        <div className="relative bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="flex items-center">
-            <div className="pl-5 text-slate-400">
-              <Search size={22} />
+        <div className="relative">
+          <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div className="flex items-center">
+              <div className="pl-5 text-slate-400">
+                <Search size={22} />
+              </div>
+
+              <input
+                ref={inputRef}
+                type="text"
+                value={url}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onFocus={() => {
+                  // 获取焦点时显示建议列表
+                  const matches = searchShops(url);
+                  setSuggestions(matches);
+                  setShowSuggestions(matches.length > 0);
+                }}
+                placeholder="输入合作店铺网址，例如 kaiten.store"
+                disabled={disabled}
+                autoComplete="off"
+                className="flex-1 px-4 py-5 text-lg text-slate-700 placeholder-slate-400 bg-transparent outline-none disabled:opacity-50"
+              />
+
+              <button
+                type="submit"
+                disabled={disabled || !url.trim()}
+                className="m-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-primary-500/25"
+              >
+                开始分析
+                <ArrowRight size={18} />
+              </button>
             </div>
-
-            <input
-              ref={inputRef}
-              type="text"
-              value={url}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              onFocus={() => {
-                if (suggestions.length > 0) setShowSuggestions(true);
-              }}
-              placeholder="输入合作店铺网址，例如 kaiten.store"
-              disabled={disabled}
-              autoComplete="off"
-              className="flex-1 px-4 py-5 text-lg text-slate-700 placeholder-slate-400 bg-transparent outline-none disabled:opacity-50"
-            />
-
-            <button
-              type="submit"
-              disabled={disabled || !url.trim()}
-              className="m-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-primary-500/25"
-            >
-              开始分析
-              <ArrowRight size={18} />
-            </button>
           </div>
 
-          {/* 自动补全建议列表 */}
+          {/* 自动补全建议列表 - 移到 overflow-hidden 外面 */}
           {showSuggestions && suggestions.length > 0 && (
             <div
               ref={suggestionsRef}
-              className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-fade-in"
+              className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-100 z-50 animate-fade-in max-h-80 overflow-y-auto"
             >
               <div className="py-2">
                 <div className="px-4 py-2 text-xs text-slate-400 uppercase tracking-wide">
