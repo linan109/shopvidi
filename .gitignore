@@ -17,9 +17,11 @@ dist-ssr
 .env.local
 .env.production
 
+# Project instructions
+CLAUDE.md
+
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea
 .DS_Store
 *.suo
