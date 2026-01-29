@@ -15,14 +15,14 @@ const Header = () => {
 
       {/* 副标题 */}
       <p className="text-lg text-slate-500 max-w-lg mx-auto leading-relaxed">
-        AI 驱动的智能店铺分析工具
+        AI 驅動的智能店舖分析工具
         <br />
-        一键获取店铺诊断报告与高利润选品推荐
+        一鍵獲取店舖診斷報告與高利潤選品推薦
       </p>
 
       {/* 特性标签 */}
       <div className="flex flex-wrap justify-center gap-3 mt-6">
-        {['店铺诊断', 'AI 选品', 'Excel 导出'].map((feature) => (
+        {['店舖診斷', 'AI 選品', 'Excel 匯出'].map((feature) => (
           <span
             key={feature}
             className="px-4 py-1.5 bg-white text-slate-600 text-sm font-medium rounded-full border border-slate-200 shadow-sm"

@@ -1,21 +1,156 @@
 // N8N API 服务 - 连接真实 N8N 工作流
 // 配置你的 N8N Webhook URL 和认证信息
 
-// 开发环境使用代理，生产环境直接请求
-const isDev = import.meta.env.DEV;
+const STORAGE_KEY = 'shopvidi_call_times';
 
 const N8N_CONFIG = {
   // 开发环境走代理 /api/n8n，生产环境用完整 URL
-  webhookUrl: isDev
-    ? '/api/n8n/webhook-test/analyse'
-    : (import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://n8n.merakku.ai/webhook-test/analyse'),
+  webhookUrl: import.meta.env.VITE_N8N_WEBHOOK_URL || 'https://n8n.merakku.ai/webhook/analyse',
 
   // 可选：API Key 认证
   apiKey: import.meta.env.VITE_N8N_API_KEY || '',
-
-  // 请求超时时间（毫秒）- 5分钟
-  timeout: 300000
 };
+
+/**
+ * 获取历史调用时间记录
+ */
+function getCallTimes() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 记录一次调用耗时（保留最近 10 次）
+ */
+function recordCallTime(ms) {
+  const times = getCallTimes().slice(-9);
+  times.push(ms);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(times));
+}
+
+/**
+ * 获取平均调用时间（毫秒），无记录返回 null
+ */
+export function getAverageTime() {
+  const times = getCallTimes();
+  if (times.length === 0) return null;
+  return times.reduce((a, b) => a + b, 0) / times.length;
+}
+
+/**
+ * 计算动态超时：平均时间 × 3，最小 60s，最大 600s
+ */
+function getDynamicTimeout() {
+  const avg = getAverageTime();
+  if (avg === null) return 600000; // 默认 10 分钟
+  return Math.min(1200000, Math.max(300000, avg * 3));
+}
+
+/**
+ * 将 analysis_summary 对象转为 Markdown 字符串
+ */
+function formatAnalysisSummary(summary) {
+  if (typeof summary === 'string') return summary;
+  if (!summary || typeof summary !== 'object') return '';
+
+  const sections = [
+    { key: 'executive_summary', title: '綜合摘要' },
+    { key: 'conversion_risk_analysis', title: '轉化風險分析' },
+    { key: 'traffic_insights', title: '流量洞察' },
+  ];
+
+  return sections
+    .filter(s => summary[s.key])
+    .map(s => `### ${s.title}\n\n${summary[s.key]}`)
+    .join('\n\n');
+}
+
+/**
+ * 规范化 N8N 返回数据，使其符合前端期望的格式
+ */
+function normalizeResponse(data) {
+  const d = data.data;
+
+  // analysis_summary: 对象 → markdown
+  d.analysis_summary = formatAnalysisSummary(d.analysis_summary);
+
+  // shop_name 优先取 data.shop_name
+  if (!d.meta) d.meta = {};
+  if (d.shop_name) {
+    d.meta.shop_name = d.shop_name;
+  }
+
+  // 处理推荐商品
+  if (d.recommendations) {
+    d.recommendations = processRecommendations(d.recommendations);
+  }
+
+  return data;
+}
+
+/**
+ * 从推荐理由中提取特色标签（每个商品最多 1 个）
+ */
+const TAG_RULES = [
+  { keywords: ['高動銷', '動銷', '熱銷', '銷量良好'], tag: '熱銷潛力', color: 'rose' },
+  { keywords: ['實用', '多功能', '日常使用'], tag: '實用周邊', color: 'sky' },
+  { keywords: ['新穎', '新鮮感', '新品', '新奇'], tag: '新品類', color: 'violet' },
+  { keywords: ['話題', '社交媒體', '傳播'], tag: '話題性', color: 'amber' },
+  { keywords: ['擴大', '拓展', '新客群', '不同客群'], tag: '拓展客群', color: 'teal' },
+  { keywords: ['親民', '低門檻', '降低.*成本'], tag: '親民入門', color: 'emerald' },
+  { keywords: ['季節', '情人節', '春季', '限定'], tag: '季節限定', color: 'pink' },
+  { keywords: ['復購', '重複購買', '長期'], tag: '高復購', color: 'indigo' },
+];
+
+function extractTags(reason) {
+  for (const rule of TAG_RULES) {
+    for (const kw of rule.keywords) {
+      if (new RegExp(kw).test(reason)) {
+        return [{ label: rule.tag, color: rule.color }];
+      }
+    }
+  }
+  return [];
+}
+
+/**
+ * 清洗推荐商品数据：
+ * - 提取推荐理由（去掉校验、比价等内部标记）
+ * - 从定价风险标记中提取利润提示
+ * - 限制数量为 12 条
+ */
+function processRecommendations(items) {
+  const MAX_ITEMS = 12;
+
+  const seenImages = new Set();
+
+  return items
+    .filter(item => !(item.reason || '').includes('🛑'))
+    .filter(item => {
+      const url = (item.image_url || '').trim();
+      if (!url || seenImages.has(url)) return false;
+      seenImages.add(url);
+      return true;
+    })
+    .slice(0, MAX_ITEMS)
+    .map(item => {
+      let reason = item.reason || '';
+
+      // 清洗 reason：只保留 💡 后到第一个 | 之间的推荐理由
+      const parts = reason.split(' | ');
+      reason = parts[0].replace(/^💡\s*/, '').trim();
+
+      return {
+        ...item,
+        reason,
+        profit_margin: item.profit_margin || null,
+        tags: extractTags(reason),
+      };
+    });
+}
 
 /**
  * 调用 N8N 工作流分析店铺
@@ -23,8 +158,10 @@ const N8N_CONFIG = {
  * @returns {Promise<object>} - 分析结果
  */
 export const analyzeShop = async (shopUrl) => {
+  const timeout = getDynamicTimeout();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), N8N_CONFIG.timeout);
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  const startTime = performance.now();
 
   try {
     const headers = {
@@ -48,8 +185,11 @@ export const analyzeShop = async (shopUrl) => {
 
     clearTimeout(timeoutId);
 
+    const elapsed = performance.now() - startTime;
+    recordCallTime(elapsed);
+
     if (!response.ok) {
-      throw new Error(`N8N 请求失败: ${response.status} ${response.statusText}`);
+      throw new Error(`N8N 請求失敗: ${response.status} ${response.statusText}`);
     }
 
     const raw = await response.json();
@@ -59,19 +199,19 @@ export const analyzeShop = async (shopUrl) => {
 
     // 验证返回数据格式
     if (!data || !data.status || !data.data) {
-      throw new Error('N8N 返回数据格式不正确');
+      throw new Error('N8N 返回數據格式不正確');
     }
 
-    return data;
+    return normalizeResponse(data);
   } catch (error) {
     clearTimeout(timeoutId);
 
     if (error.name === 'AbortError') {
-      throw new Error('请求超时，请稍后重试');
+      throw new Error('請求超時，請稍後重試');
     }
 
     throw error;
   }
 };
 
-export default { analyzeShop };
+export default { analyzeShop, getAverageTime };

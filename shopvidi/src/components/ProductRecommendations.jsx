@@ -18,19 +18,40 @@ const ProductCard = ({ product, index }) => {
         />
 
         {/* 利润标签 */}
-        <div className="absolute top-3 right-3 px-3 py-1 bg-green-500/90 text-white text-sm font-medium rounded-full backdrop-blur-sm">
-          <span className="flex items-center gap-1">
-            <TrendingUp size={14} />
-            利润 {product.profit_margin}
-          </span>
-        </div>
+        {product.profit_margin && (
+          <div className="absolute top-3 right-3 px-3 py-1 bg-green-500/90 text-white text-sm font-medium rounded-full backdrop-blur-sm">
+            <span className="flex items-center gap-1">
+              <TrendingUp size={14} />
+              利潤 {product.profit_margin}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 产品信息 */}
       <div className="p-5">
-        <h3 className="font-semibold text-slate-800 text-lg mb-2">
+        <h3 className="font-semibold text-slate-800 text-lg mb-1">
           {product.name}
         </h3>
+
+        {product.price && (
+          <p className="text-primary-600 font-bold text-lg mb-2">
+            HK${product.price}
+          </p>
+        )}
+
+        {product.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {product.tags.map((tag) => (
+              <span
+                key={tag.label}
+                className={`px-2 py-0.5 text-xs font-medium rounded-full bg-${tag.color}-100 text-${tag.color}-700`}
+              >
+                {tag.label}
+              </span>
+            ))}
+          </div>
+        )}
 
         <p className="text-slate-500 text-sm leading-relaxed">
           {product.reason}
@@ -54,10 +75,10 @@ const ProductRecommendations = ({ recommendations }) => {
         </div>
         <div>
           <h2 className="text-xl font-semibold text-slate-800">
-            AI 选品推荐
+            AI 選品推薦
           </h2>
           <p className="text-sm text-slate-500">
-            基于店铺风格智能匹配的高利润产品
+            基於店舖風格智能匹配的高利潤產品
           </p>
         </div>
       </div>

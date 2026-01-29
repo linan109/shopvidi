@@ -13,12 +13,12 @@ const AnalysisResult = ({ data }) => {
         </div>
         <div>
           <h2 className="text-xl font-semibold text-slate-800">
-            {meta?.shop_name || '店铺分析'}
+            {meta?.shop_name || '店舖分析'}
           </h2>
           <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
             <span className="flex items-center gap-1">
               <Clock size={14} />
-              处理时间: {meta?.processed_time || 'N/A'}
+              處理時間: {meta?.processed_time || 'N/A'}
             </span>
           </div>
         </div>
@@ -29,7 +29,7 @@ const AnalysisResult = ({ data }) => {
         <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
           <div className="flex items-center gap-2 text-slate-700 font-medium">
             <FileText size={18} className="text-primary-500" />
-            AI 分析报告
+            AI 分析報告
           </div>
         </div>
 

@@ -4,6 +4,10 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    { pattern: /^bg-(rose|sky|violet|amber|teal|emerald|pink|indigo)-100$/ },
+    { pattern: /^text-(rose|sky|violet|amber|teal|emerald|pink|indigo)-700$/ },
+  ],
   theme: {
     extend: {
       fontFamily: {

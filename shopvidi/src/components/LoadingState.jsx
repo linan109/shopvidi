@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { getAverageTime } from '../services/n8nApi.js';
 
 const LOADING_MESSAGES = [
-  "正在连接店铺...",
-  "正在解析页面结构...",
-  "正在抓取商品数据...",
-  "正在分析店铺风格...",
-  "正在评估 SEO 表现...",
-  "正在分析竞品数据...",
-  "正在匹配选品库...",
-  "正在生成 AI 推荐...",
-  "正在优化产品组合...",
-  "即将完成分析..."
+  "正在連接店舖數據...",
+  "讀取近期銷量及訂單數據...",
+  "分析暢銷品類及熱賣趨勢...",
+  "發掘高利潤爆品機會...",
+  "評估銷售增長空間...",
+  "掃描新興市場及藍海賽道...",
+  "比對供應鏈匹配度...",
+  "篩選高潛力推薦商品...",
+  "生成分析報告...",
+  "即將完成，請稍候..."
 ];
 
 const LoadingState = () => {
@@ -19,20 +20,30 @@ const LoadingState = () => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    const avg = getAverageTime();
+    const estimatedTime = avg !== null ? avg : 600000; // 默认 600s
+    const interval = estimatedTime / LOADING_MESSAGES.length;
+
     // 文案切换
     const messageInterval = setInterval(() => {
       setMessageIndex((prev) =>
         prev < LOADING_MESSAGES.length - 1 ? prev + 1 : prev
       );
-    }, 2500);
+    }, interval);
 
-    // 进度条动画
+    // 进度条动画：基于预估时间匀速推进到 90%
+    const progressTick = 1000; // 每秒更新一次
+    const totalTicks = estimatedTime / progressTick;
+    const stepPerTick = 90 / totalTicks;
+
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 90) return prev;
-        return prev + Math.random() * 8;
+        // 加少量随机波动，避免太机械
+        const jitter = stepPerTick * 0.3 * (Math.random() - 0.5);
+        return Math.min(90, prev + stepPerTick + jitter);
       });
-    }, 1000);
+    }, progressTick);
 
     return () => {
       clearInterval(messageInterval);

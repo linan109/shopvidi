@@ -36,11 +36,11 @@ function App() {
         setResult(response.data);
         setViewState(VIEW_STATE.RESULT);
       } else {
-        throw new Error(response.message || '分析失败');
+        throw new Error(response.message || '分析失敗');
       }
     } catch (err) {
       console.error('分析错误:', err);
-      setError(err.message || '分析过程中发生错误，请稍后重试');
+      setError(err.message || '分析過程中發生錯誤，請稍後重試');
       setViewState(VIEW_STATE.ERROR);
     }
   };
@@ -82,7 +82,7 @@ function App() {
                 <AlertCircle className="w-8 h-8 text-red-500" />
               </div>
               <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                分析失败
+                分析失敗
               </h3>
               <p className="text-slate-500 mb-6">{error}</p>
               <button
@@ -90,7 +90,7 @@ function App() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-700 transition-colors"
               >
                 <RefreshCw size={18} />
-                重新尝试
+                重新嘗試
               </button>
             </div>
           </div>

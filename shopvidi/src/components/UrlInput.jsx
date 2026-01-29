@@ -94,19 +94,19 @@ const UrlInput = ({ onSubmit, disabled }) => {
     const trimmedUrl = url.trim();
 
     if (!trimmedUrl) {
-      setError('请输入店铺 URL');
+      setError('請輸入店舖 URL');
       return;
     }
 
     // 验证 URL 格式
     if (!isValidUrlFormat(trimmedUrl)) {
-      setError('请输入有效的网址格式，例如 shop.example.com');
+      setError('請輸入有效的網址格式，例如 shop.example.com');
       return;
     }
 
     // 检查是否在白名单中
     if (!isShopInList(trimmedUrl)) {
-      setError('该店铺还未开通服务，敬请期待！');
+      setError('該店舖尚未開通服務，敬請期待！');
       return;
     }
 
@@ -141,7 +141,7 @@ const UrlInput = ({ onSubmit, disabled }) => {
                   setSuggestions(matches);
                   setShowSuggestions(matches.length > 0);
                 }}
-                placeholder="输入合作店铺网址，例如 kaiten.store"
+                placeholder="輸入合作店舖網址，例如 kaiten.store"
                 disabled={disabled}
                 autoComplete="off"
                 className="flex-1 px-4 py-5 text-lg text-slate-700 placeholder-slate-400 bg-transparent outline-none disabled:opacity-50"
@@ -152,7 +152,7 @@ const UrlInput = ({ onSubmit, disabled }) => {
                 disabled={disabled || !url.trim()}
                 className="m-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-medium rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-primary-500/25"
               >
-                开始分析
+                開始分析
                 <ArrowRight size={18} />
               </button>
             </div>
@@ -166,7 +166,7 @@ const UrlInput = ({ onSubmit, disabled }) => {
             >
               <div className="py-2">
                 <div className="px-4 py-2 text-xs text-slate-400 uppercase tracking-wide">
-                  合作店铺
+                  合作店舖
                 </div>
                 {suggestions.map((shop, index) => (
                   <button
@@ -201,7 +201,7 @@ const UrlInput = ({ onSubmit, disabled }) => {
 
       {/* 提示文案 */}
       <p className="mt-4 text-center text-slate-400 text-sm">
-        目前仅支持已合作店铺，输入网址即可快速匹配
+        目前僅支持已合作店舖，輸入網址即可快速匹配
       </p>
     </form>
   );

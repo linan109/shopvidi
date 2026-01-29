@@ -7,7 +7,7 @@ const ExportButton = ({ downloadUrl }) => {
       window.open(downloadUrl, '_blank');
     } else {
       // Demo 模式提示
-      alert('这是 Demo 模式。在连接真实 N8N 工作流后，将提供实际的 Excel 下载。');
+      alert('這是 Demo 模式。在連接真實 N8N 工作流後，將提供實際的 Excel 下載。');
     }
   };
 
@@ -21,7 +21,7 @@ const ExportButton = ({ downloadUrl }) => {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
 
         <FileSpreadsheet size={22} className="relative" />
-        <span className="relative">导出优化选品表</span>
+        <span className="relative">匯出優化選品表</span>
         <Download size={18} className="relative group-hover:translate-y-0.5 transition-transform" />
       </button>
     </div>
