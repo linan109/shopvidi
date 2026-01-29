@@ -245,6 +245,6 @@ export const analyzeShop = async (shopUrl) => {
 };
 
 // 导出缓存相关函数
-export { getCachedShops, clearAllCache } from './cacheDb';
+export { getCachedShops, clearAllCache, getCacheStats } from './cacheDb';
 
 export default { analyzeShop, getAverageTime };
