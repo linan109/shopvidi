@@ -163,6 +163,10 @@ export const analyzeShop = async (shopUrl) => {
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   const startTime = performance.now();
 
+  // 调试日志
+  console.log('🚀 Calling N8N API:', N8N_CONFIG.webhookUrl);
+  console.log('📦 Request body:', { shop_url: shopUrl, timestamp: new Date().toISOString() });
+
   try {
     const headers = {
       'Content-Type': 'application/json',
@@ -188,17 +192,21 @@ export const analyzeShop = async (shopUrl) => {
     const elapsed = performance.now() - startTime;
     recordCallTime(elapsed);
 
+    console.log('✅ N8N Response status:', response.status);
+
     if (!response.ok) {
       throw new Error(`N8N 請求失敗: ${response.status} ${response.statusText}`);
     }
 
     const raw = await response.json();
+    console.log('📥 N8N Response data:', raw);
 
     // N8N 可能返回数组 [{...}]，取第一个元素
     const data = Array.isArray(raw) ? raw[0] : raw;
 
     // 验证返回数据格式
     if (!data || !data.status || !data.data) {
+      console.error('❌ Invalid N8N response format:', data);
       throw new Error('N8N 返回數據格式不正確');
     }
 
@@ -206,8 +214,15 @@ export const analyzeShop = async (shopUrl) => {
   } catch (error) {
     clearTimeout(timeoutId);
 
+    console.error('❌ N8N API Error:', error);
+
     if (error.name === 'AbortError') {
       throw new Error('請求超時，請稍後重試');
+    }
+
+    // CORS 错误提示
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      throw new Error('無法連接到 N8N 服務，請檢查 CORS 配置或網絡連接');
     }
 
     throw error;
