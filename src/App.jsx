@@ -7,8 +7,9 @@ import {
   ProductRecommendations,
   ExportButton
 } from './components';
+import ErrorState from './components/ErrorState';
 import { analyzeShop } from './services/api';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 // 应用状态
 const VIEW_STATE = {
@@ -52,6 +53,18 @@ function App() {
     setAnalyzedUrl('');
   };
 
+  const handleRetry = () => {
+    if (analyzedUrl) {
+      handleAnalyze(analyzedUrl);
+    } else {
+      handleReset();
+    }
+  };
+
+  const handleSelectShop = (url) => {
+    handleAnalyze(url);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* 背景装饰 */}
@@ -76,24 +89,11 @@ function App() {
 
         {/* 错误视图 */}
         {viewState === VIEW_STATE.ERROR && (
-          <div className="max-w-md mx-auto text-center animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-red-100 p-8">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-red-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                分析失敗
-              </h3>
-              <p className="text-slate-500 mb-6">{error}</p>
-              <button
-                onClick={handleReset}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-700 transition-colors"
-              >
-                <RefreshCw size={18} />
-                重新嘗試
-              </button>
-            </div>
-          </div>
+          <ErrorState
+            error={error}
+            onRetry={handleRetry}
+            onSelectShop={handleSelectShop}
+          />
         )}
 
         {/* 结果视图 */}

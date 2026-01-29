@@ -1,6 +1,8 @@
 // N8N API 服务 - 连接真实 N8N 工作流
 // 配置你的 N8N Webhook URL 和认证信息
 
+import { saveToCache, getFromCache } from './cacheDb';
+
 const STORAGE_KEY = 'shopvidi_call_times';
 
 const N8N_CONFIG = {
@@ -210,12 +212,25 @@ export const analyzeShop = async (shopUrl) => {
       throw new Error('N8N 返回數據格式不正確');
     }
 
-    return normalizeResponse(data);
+    const result = normalizeResponse(data);
+
+    // 保存成功结果到缓存
+    await saveToCache(shopUrl, result, true);
+
+    return result;
   } catch (error) {
     clearTimeout(timeoutId);
 
     console.error('❌ N8N API Error:', error);
 
+    // 尝试使用缓存数据降级
+    const cachedResult = await getFromCache(shopUrl);
+    if (cachedResult) {
+      console.log('📦 使用缓存数据作为降级方案');
+      return cachedResult;
+    }
+
+    // 如果没有缓存，抛出错误
     if (error.name === 'AbortError') {
       throw new Error('請求超時，請稍後重試');
     }
@@ -228,5 +243,8 @@ export const analyzeShop = async (shopUrl) => {
     throw error;
   }
 };
+
+// 导出缓存相关函数
+export { getCachedShops, clearAllCache } from './cacheDb';
 
 export default { analyzeShop, getAverageTime };
