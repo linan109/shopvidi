@@ -1,17 +1,8 @@
 import ReactMarkdown from 'react-markdown';
-import { FileText, Clock, Store, Database } from 'lucide-react';
+import { FileText, Clock, Store } from 'lucide-react';
 
 const AnalysisResult = ({ data }) => {
-  const { analysis_summary, meta, _fromCache, _cacheAge } = data;
-
-  // 格式化缓存时间
-  function formatCacheAge(ms) {
-    const hours = Math.floor(ms / 1000 / 60 / 60);
-    if (hours < 1) return '不到 1 小时前';
-    if (hours < 24) return `${hours} 小时前`;
-    const days = Math.floor(hours / 24);
-    return `${days} 天前`;
-  }
+  const { analysis_summary, meta } = data;
 
   return (
     <div className="animate-slide-up">
@@ -21,29 +12,14 @@ const AnalysisResult = ({ data }) => {
           <Store className="w-7 h-7 text-white" />
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-slate-800">
-              {meta?.shop_name || '店舖分析'}
-            </h2>
-            {_fromCache && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 text-sm font-medium rounded-full border border-amber-200">
-                <Database size={14} />
-                離線數據
-              </span>
-            )}
-          </div>
+          <h2 className="text-xl font-semibold text-slate-800">
+            {meta?.shop_name || '店舖分析'}
+          </h2>
           <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
-            {_fromCache ? (
-              <span className="flex items-center gap-1">
-                <Clock size={14} />
-                緩存時間: {formatCacheAge(_cacheAge)}
-              </span>
-            ) : (
-              <span className="flex items-center gap-1">
-                <Clock size={14} />
-                處理時間: {meta?.processed_time || 'N/A'}
-              </span>
-            )}
+            <span className="flex items-center gap-1">
+              <Clock size={14} />
+              處理時間: {meta?.processed_time || 'N/A'}
+            </span>
           </div>
         </div>
       </div>

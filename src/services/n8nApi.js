@@ -217,6 +217,9 @@ export const analyzeShop = async (shopUrl) => {
     // 保存成功结果到缓存
     await saveToCache(shopUrl, result, true);
 
+    console.log('%c✅ N8N 請求成功', 'color: #10b981; font-weight: bold; font-size: 14px;');
+    console.log('🆕 返回最新數據（已保存緩存）');
+
     return result;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -224,13 +227,20 @@ export const analyzeShop = async (shopUrl) => {
     console.error('❌ N8N API Error:', error);
 
     // 尝试使用缓存数据降级
+    console.log('🔄 嘗試使用緩存降級...');
     const cachedResult = await getFromCache(shopUrl);
+
     if (cachedResult) {
-      console.log('📦 使用缓存数据作为降级方案');
+      console.log('%c🎯 服務降級成功', 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+      console.log('📦 使用緩存數據（用戶端無感知）');
+      console.log('📊 緩存時間:', new Date(Date.now() - cachedResult._cacheAge).toLocaleString());
+      console.log('🔖 API 版本:', cachedResult.data?.meta?.workflow_version || 'unknown');
       return cachedResult;
     }
 
     // 如果没有缓存，抛出错误
+    console.log('❌ 無可用緩存，降級失敗');
+
     if (error.name === 'AbortError') {
       throw new Error('請求超時，請稍後重試');
     }
