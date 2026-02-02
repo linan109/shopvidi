@@ -156,10 +156,10 @@ function processRecommendations(items) {
 
 /**
  * 调用 N8N 工作流分析店铺
- * @param {string} shopUrl - 店铺 URL
+ * @param {string} shopId - 店铺 ID
  * @returns {Promise<object>} - 分析结果
  */
-export const analyzeShop = async (shopUrl) => {
+export const analyzeShop = async (shopId) => {
   const timeout = getDynamicTimeout();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -167,7 +167,7 @@ export const analyzeShop = async (shopUrl) => {
 
   // 调试日志
   console.log('🚀 Calling N8N API:', N8N_CONFIG.webhookUrl);
-  console.log('📦 Request body:', { shop_url: shopUrl, timestamp: new Date().toISOString() });
+  console.log('📦 Request body:', { shop_id: shopId, timestamp: new Date().toISOString() });
 
   try {
     const headers = {
@@ -183,7 +183,7 @@ export const analyzeShop = async (shopUrl) => {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        shop_url: shopUrl,
+        shop_id: shopId,
         timestamp: new Date().toISOString()
       }),
       signal: controller.signal
@@ -215,7 +215,7 @@ export const analyzeShop = async (shopUrl) => {
     const result = normalizeResponse(data);
 
     // 保存成功结果到缓存
-    await saveToCache(shopUrl, result, true);
+    await saveToCache(shopId, result, true);
 
     console.log('%c✅ N8N 請求成功', 'color: #10b981; font-weight: bold; font-size: 14px;');
     console.log('🆕 返回最新數據（已保存緩存）');
@@ -228,7 +228,7 @@ export const analyzeShop = async (shopUrl) => {
 
     // 尝试使用缓存数据降级
     console.log('🔄 嘗試使用緩存降級...');
-    const cachedResult = await getFromCache(shopUrl);
+    const cachedResult = await getFromCache(shopId);
 
     if (cachedResult) {
       console.log('%c🎯 服務降級成功', 'color: #f59e0b; font-weight: bold; font-size: 14px;');

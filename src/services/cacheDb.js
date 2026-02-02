@@ -36,7 +36,7 @@ function initDB() {
 
       // 创建对象存储（如果不存在）
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'shop_url' });
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'shop_id' });
         store.createIndex('timestamp', 'timestamp', { unique: false });
         store.createIndex('success', 'success', { unique: false });
       }
@@ -45,15 +45,10 @@ function initDB() {
 }
 
 /**
- * 标准化店铺 URL（用作缓存键）
+ * 标准化店铺 ID（用作缓存键）
  */
-function normalizeUrl(url) {
-  try {
-    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
-    return parsed.hostname + parsed.pathname.replace(/\/$/, '');
-  } catch {
-    return url.toLowerCase().trim();
-  }
+function normalizeShopId(id) {
+  return id.trim().toUpperCase();
 }
 
 /**
@@ -72,11 +67,11 @@ function extractApiVersion(result) {
 
 /**
  * 保存分析结果到缓存
- * @param {string} shopUrl - 店铺 URL
+ * @param {string} shopId - 店铺 ID
  * @param {object} result - 分析结果
  * @param {boolean} success - 是否成功
  */
-export async function saveToCache(shopUrl, result, success = true) {
+export async function saveToCache(shopId, result, success = true) {
   try {
     const db = await initDB();
     const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -85,12 +80,11 @@ export async function saveToCache(shopUrl, result, success = true) {
     const apiVersion = extractApiVersion(result);
 
     const cacheData = {
-      shop_url: normalizeUrl(shopUrl),
-      original_url: shopUrl,
+      shop_id: normalizeShopId(shopId),
       result,
       success,
       timestamp: Date.now(),
-      api_version: apiVersion, // 记录 API 版本
+      api_version: apiVersion,
     };
 
     await new Promise((resolve, reject) => {
@@ -99,7 +93,7 @@ export async function saveToCache(shopUrl, result, success = true) {
       request.onerror = () => reject(request.error);
     });
 
-    console.log('✅ 缓存已保存:', normalizeUrl(shopUrl), `(API v${apiVersion})`);
+    console.log('✅ 缓存已保存:', normalizeShopId(shopId), `(API v${apiVersion})`);
   } catch (error) {
     console.error('❌ 保存缓存失败:', error);
   }
@@ -107,24 +101,24 @@ export async function saveToCache(shopUrl, result, success = true) {
 
 /**
  * 从缓存读取分析结果
- * @param {string} shopUrl - 店铺 URL
+ * @param {string} shopId - 店铺 ID
  * @param {boolean} ignoreVersion - 是否忽略版本检查（用于展示历史记录）
  * @returns {object|null} - 缓存的结果或 null
  */
-export async function getFromCache(shopUrl, ignoreVersion = false) {
+export async function getFromCache(shopId, ignoreVersion = false) {
   try {
     const db = await initDB();
     const transaction = db.transaction([STORE_NAME], 'readonly');
     const store = transaction.objectStore(STORE_NAME);
 
     const cacheData = await new Promise((resolve, reject) => {
-      const request = store.get(normalizeUrl(shopUrl));
+      const request = store.get(normalizeShopId(shopId));
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
 
     if (!cacheData) {
-      console.log('📭 无缓存数据:', normalizeUrl(shopUrl));
+      console.log('📭 无缓存数据:', normalizeShopId(shopId));
       return null;
     }
 
@@ -142,7 +136,7 @@ export async function getFromCache(shopUrl, ignoreVersion = false) {
       return null;
     }
 
-    console.log('✅ 使用缓存数据:', normalizeUrl(shopUrl), `(${Math.floor(age / 1000 / 60 / 60)}小时前, API v${cacheData.api_version})`);
+    console.log('✅ 使用缓存数据:', normalizeShopId(shopId), `(${Math.floor(age / 1000 / 60 / 60)}小时前, API v${cacheData.api_version})`);
     return {
       ...cacheData.result,
       _fromCache: true,
@@ -176,8 +170,8 @@ export async function getCachedShops() {
       .filter(shop => Date.now() - shop.timestamp < MAX_CACHE_AGE)
       .sort((a, b) => b.timestamp - a.timestamp)
       .map(shop => ({
-        url: shop.original_url,
-        shop_name: shop.result?.data?.meta?.shop_name || shop.original_url,
+        shop_id: shop.shop_id,
+        shop_name: shop.result?.data?.meta?.shop_name || shop.shop_id,
         timestamp: shop.timestamp,
         age: Date.now() - shop.timestamp,
       }));

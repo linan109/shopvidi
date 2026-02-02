@@ -73,15 +73,12 @@ export default function ErrorState({ error, onRetry, onSelectShop }) {
             {cachedShops.slice(0, 10).map((shop, index) => (
               <button
                 key={index}
-                onClick={() => onSelectShop(shop.url)}
+                onClick={() => onSelectShop(shop.shop_id)}
                 className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors text-left group"
               >
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                    {shop.shop_name}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {shop.url}
+                    {shop.shop_id}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500">

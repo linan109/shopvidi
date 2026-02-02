@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Header,
-  UrlInput,
+  ShopIdInput,
   LoadingState,
   AnalysisResult,
   ProductRecommendations,
@@ -23,15 +23,15 @@ function App() {
   const [viewState, setViewState] = useState(VIEW_STATE.INPUT);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  const [analyzedUrl, setAnalyzedUrl] = useState('');
+  const [analyzedShopId, setAnalyzedShopId] = useState('');
 
-  const handleAnalyze = async (url) => {
+  const handleAnalyze = async (shopId) => {
     setViewState(VIEW_STATE.LOADING);
     setError('');
-    setAnalyzedUrl(url);
+    setAnalyzedShopId(shopId);
 
     try {
-      const response = await analyzeShop(url);
+      const response = await analyzeShop(shopId);
 
       if (response.status === 'success') {
         setResult(response.data);
@@ -50,19 +50,19 @@ function App() {
     setViewState(VIEW_STATE.INPUT);
     setResult(null);
     setError('');
-    setAnalyzedUrl('');
+    setAnalyzedShopId('');
   };
 
   const handleRetry = () => {
-    if (analyzedUrl) {
-      handleAnalyze(analyzedUrl);
+    if (analyzedShopId) {
+      handleAnalyze(analyzedShopId);
     } else {
       handleReset();
     }
   };
 
-  const handleSelectShop = (url) => {
-    handleAnalyze(url);
+  const handleSelectShop = (shopId) => {
+    handleAnalyze(shopId);
   };
 
   return (
@@ -79,7 +79,7 @@ function App() {
 
         {/* 输入视图 */}
         {viewState === VIEW_STATE.INPUT && (
-          <UrlInput onSubmit={handleAnalyze} />
+          <ShopIdInput onSubmit={handleAnalyze} />
         )}
 
         {/* 加载视图 */}
@@ -99,11 +99,11 @@ function App() {
         {/* 结果视图 */}
         {viewState === VIEW_STATE.RESULT && result && (
           <div className="space-y-8">
-            {/* 已分析的 URL */}
+            {/* 已分析的 Shop ID */}
             <div className="flex items-center justify-center gap-4 mb-8 animate-fade-in">
               <span className="text-slate-500">已分析:</span>
               <code className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-mono">
-                {analyzedUrl}
+                Shop ID {analyzedShopId}
               </code>
               <button
                 onClick={handleReset}
@@ -121,7 +121,7 @@ function App() {
             <ProductRecommendations recommendations={result.recommendations} />
 
             {/* 导出按钮 */}
-            <ExportButton downloadUrl={result.excel_download_url} />
+            <ExportButton downloadUrl={result.excel_download_url} resultData={result} />
           </div>
         )}
 
