@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Header,
   ShopIdInput,
   LoadingState,
   AnalysisResult,
   ProductRecommendations,
-  ExportButton
+  ExportButton,
 } from './components';
 import ErrorState from './components/ErrorState';
 import { analyzeShop } from './services/api';
-import { RefreshCw } from 'lucide-react';
+import { generateReportImage } from './utils/exportReport';
+import { RefreshCw, Camera } from 'lucide-react';
 
 // 应用状态
 const VIEW_STATE = {
@@ -19,15 +20,36 @@ const VIEW_STATE = {
   ERROR: 'error'
 };
 
+// 检查是否为导出模式
+const isExportMode = new URLSearchParams(window.location.search).get('mode') === 'export';
+
+// 脱敏处理
+function sanitizeData(data) {
+  if (!data) return data;
+  const clone = JSON.parse(JSON.stringify(data));
+  const originalName = clone.meta?.shop_name || '';
+  const placeholder = '店鋪 A';
+
+  if (clone.meta?.shop_name) clone.meta.shop_name = placeholder;
+  if (clone.shop_name) clone.shop_name = placeholder;
+  if (clone.analysis_summary && originalName) {
+    clone.analysis_summary = clone.analysis_summary.replaceAll(originalName, placeholder);
+  }
+  return clone;
+}
+
 function App() {
   const [viewState, setViewState] = useState(VIEW_STATE.INPUT);
   const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
   const [analyzedShopId, setAnalyzedShopId] = useState('');
+
+  // 导出模式下使用脱敏数据
+  const displayData = useMemo(() => {
+    return isExportMode ? sanitizeData(result) : result;
+  }, [result]);
 
   const handleAnalyze = async (shopId) => {
     setViewState(VIEW_STATE.LOADING);
-    setError('');
     setAnalyzedShopId(shopId);
 
     try {
@@ -41,7 +63,6 @@ function App() {
       }
     } catch (err) {
       console.error('分析错误:', err);
-      setError(err.message || '分析過程中發生錯誤，請稍後重試');
       setViewState(VIEW_STATE.ERROR);
     }
   };
@@ -49,20 +70,14 @@ function App() {
   const handleReset = () => {
     setViewState(VIEW_STATE.INPUT);
     setResult(null);
-    setError('');
     setAnalyzedShopId('');
   };
 
-  const handleRetry = () => {
-    if (analyzedShopId) {
-      handleAnalyze(analyzedShopId);
-    } else {
-      handleReset();
-    }
-  };
-
-  const handleSelectShop = (shopId) => {
-    handleAnalyze(shopId);
+  // 保存报告截图
+  const handleSaveReport = () => {
+    generateReportImage().catch(err => {
+      console.error('截图导出失败:', err);
+    });
   };
 
   return (
@@ -89,40 +104,55 @@ function App() {
 
         {/* 错误视图 */}
         {viewState === VIEW_STATE.ERROR && (
-          <ErrorState
-            error={error}
-            onRetry={handleRetry}
-            onSelectShop={handleSelectShop}
-          />
+          <ErrorState />
         )}
 
         {/* 结果视图 */}
-        {viewState === VIEW_STATE.RESULT && result && (
-          <div className="space-y-8">
-            {/* 已分析的 Shop ID */}
-            <div className="flex items-center justify-center gap-4 mb-8 animate-fade-in">
-              <span className="text-slate-500">已分析:</span>
-              <code className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-mono">
-                Shop ID {analyzedShopId}
-              </code>
-              <button
-                onClick={handleReset}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
-              >
-                <RefreshCw size={16} />
-                重新分析
-              </button>
+        {viewState === VIEW_STATE.RESULT && displayData && (
+          <>
+            <div id="report-content" className="space-y-8">
+              {/* 已分析的 Shop ID - 导出模式下显示脱敏信息 */}
+              <div className="flex items-center justify-center gap-4 mb-8 animate-fade-in">
+                <span className="text-slate-500">已分析:</span>
+                <code className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-mono">
+                  {isExportMode ? '店鋪 A' : `Shop ID ${analyzedShopId}`}
+                </code>
+                {!isExportMode && (
+                  <button
+                    onClick={handleReset}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
+                  >
+                    <RefreshCw size={16} />
+                    重新分析
+                  </button>
+                )}
+              </div>
+
+              {/* 分析结果 */}
+              <AnalysisResult data={displayData} />
+
+              {/* 产品推荐 */}
+              <ProductRecommendations recommendations={displayData.recommendations} />
+
+              {/* Excel 导出按钮 - 仅正常模式显示 */}
+              {!isExportMode && (
+                <ExportButton downloadUrl={displayData.excel_download_url} />
+              )}
             </div>
 
-            {/* 分析结果 */}
-            <AnalysisResult data={result} />
-
-            {/* 产品推荐 */}
-            <ProductRecommendations recommendations={result.recommendations} />
-
-            {/* 导出按钮 */}
-            <ExportButton downloadUrl={result.excel_download_url} resultData={result} />
-          </div>
+            {/* 保存报告按钮 - 仅导出模式显示，在截图区域外 */}
+            {isExportMode && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={handleSaveReport}
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-violet-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                >
+                  <Camera size={20} />
+                  保存報告圖片
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* 页脚 */}

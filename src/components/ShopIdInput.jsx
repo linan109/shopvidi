@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, ArrowRight, Store, AlertTriangle } from 'lucide-react';
-import { searchShopIds, isShopIdValid } from '../data/shopIdList';
+import { searchShopIds } from '../data/shopIdList';
 
 const ShopIdInput = ({ onSubmit, disabled }) => {
   const [shopId, setShopId] = useState('');
@@ -83,11 +83,6 @@ const ShopIdInput = ({ onSubmit, disabled }) => {
       return;
     }
 
-    if (!isShopIdValid(trimmed)) {
-      setError('該店鋪尚未開通服務，敬請期待！');
-      return;
-    }
-
     onSubmit(trimmed);
   };
 
@@ -109,12 +104,7 @@ const ShopIdInput = ({ onSubmit, disabled }) => {
                 value={shopId}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                onFocus={() => {
-                  const matches = searchShopIds(shopId);
-                  setSuggestions(matches);
-                  setShowSuggestions(matches.length > 0);
-                }}
-                placeholder="輸入店鋪 ID，例如 SV001"
+                placeholder="輸入店鋪 ID"
                 disabled={disabled}
                 autoComplete="off"
                 className="flex-1 px-4 py-5 text-lg text-slate-700 placeholder-slate-400 bg-transparent outline-none disabled:opacity-50"
@@ -172,10 +162,6 @@ const ShopIdInput = ({ onSubmit, disabled }) => {
         </div>
       )}
 
-      {/* 提示文案 */}
-      <p className="mt-4 text-center text-slate-400 text-sm">
-        目前僅支持已合作店鋪，輸入 ID 即可快速匹配
-      </p>
     </form>
   );
 };
