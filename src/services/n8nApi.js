@@ -2,6 +2,7 @@
 // 配置你的 N8N Webhook URL 和认证信息
 
 import { saveToCache, getFromCache } from './cacheDb';
+import { checkRateLimit, recordRequest } from './rateLimiter';
 
 const STORAGE_KEY = 'shopvidi_call_times';
 
@@ -160,10 +161,20 @@ function processRecommendations(items) {
  * @returns {Promise<object>} - 分析结果
  */
 export const analyzeShop = async (shopId) => {
+  // 检查限流
+  const rateLimitResult = checkRateLimit();
+  if (!rateLimitResult.allowed) {
+    console.warn('⚠️ 請求被限流:', rateLimitResult.reason);
+    throw new Error(rateLimitResult.reason);
+  }
+
   const timeout = getDynamicTimeout();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   const startTime = performance.now();
+
+  // 记录请求（在发起请求前记录，确保限流准确）
+  recordRequest();
 
   // 调试日志
   console.log('🚀 Calling N8N API:', N8N_CONFIG.webhookUrl);
