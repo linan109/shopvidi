@@ -28,14 +28,16 @@ function App() {
   const [viewState, setViewState] = useState(VIEW_STATE.INPUT);
   const [result, setResult] = useState(null);
   const [analyzedShopId, setAnalyzedShopId] = useState('');
+  const [analyzedShopUrl, setAnalyzedShopUrl] = useState('');
 
 
-  const handleAnalyze = async (shopId) => {
+  const handleAnalyze = async (shopId, shopUrl = '') => {
     setViewState(VIEW_STATE.LOADING);
     setAnalyzedShopId(shopId);
+    setAnalyzedShopUrl(shopUrl);
 
     try {
-      const response = await analyzeShop(shopId);
+      const response = await analyzeShop(shopId, shopUrl);
 
       if (response.status === 'success') {
         setResult(response.data);
@@ -53,11 +55,12 @@ function App() {
     setViewState(VIEW_STATE.INPUT);
     setResult(null);
     setAnalyzedShopId('');
+    setAnalyzedShopUrl('');
   };
 
   // 保存报告截图
   const handleSaveReport = () => {
-    generateReportImage().catch(err => {
+    generateReportImage(analyzedShopId, analyzedShopUrl).catch(err => {
       console.error('截图导出失败:', err);
     });
   };
@@ -109,14 +112,27 @@ function App() {
               )}
 
               {/* 分析结果 */}
-              <AnalysisResult data={result} />
+              <AnalysisResult data={result} shopUrl={isExportMode ? '' : analyzedShopUrl} />
 
               {/* 产品推荐 */}
               <ProductRecommendations recommendations={result.recommendations} />
 
               {/* Excel 导出按钮 - 仅正常模式显示 */}
               {!isExportMode && (
-                <ExportButton downloadUrl={result.excel_download_url} />
+                <>
+                  <ExportButton downloadUrl={result.excel_download_url} />
+
+                  {/* 保存报告按钮 - 正常模式也显示 */}
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleSaveReport}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-600 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shadow-sm"
+                    >
+                      <FileDown size={18} />
+                      下載報告
+                    </button>
+                  </div>
+                </>
               )}
             </div>
 

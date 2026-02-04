@@ -158,9 +158,10 @@ function processRecommendations(items) {
 /**
  * 调用 N8N 工作流分析店铺
  * @param {string} shopId - 店铺 ID
+ * @param {string} shopUrl - 店铺网址（可选）
  * @returns {Promise<object>} - 分析结果
  */
-export const analyzeShop = async (shopId) => {
+export const analyzeShop = async (shopId, shopUrl = '') => {
   // 检查限流
   const rateLimitResult = checkRateLimit();
   if (!rateLimitResult.allowed) {
@@ -177,8 +178,13 @@ export const analyzeShop = async (shopId) => {
   recordRequest();
 
   // 调试日志
+  const requestBody = {
+    shop_id: shopId,
+    shop_url: shopUrl || '',
+    timestamp: new Date().toISOString()
+  };
   console.log('🚀 Calling N8N API:', N8N_CONFIG.webhookUrl);
-  console.log('📦 Request body:', { shop_id: shopId, timestamp: new Date().toISOString() });
+  console.log('📦 Request body:', requestBody);
 
   try {
     const headers = {
@@ -193,10 +199,7 @@ export const analyzeShop = async (shopId) => {
     const response = await fetch(N8N_CONFIG.webhookUrl, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        shop_id: shopId,
-        timestamp: new Date().toISOString()
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal
     });
 

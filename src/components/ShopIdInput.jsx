@@ -1,15 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, ArrowRight, Store, AlertTriangle } from 'lucide-react';
+import { Search, ArrowRight, Store, AlertTriangle, Link } from 'lucide-react';
 import { searchShopIds } from '../data/shopIdList';
 
 const ShopIdInput = ({ onSubmit, disabled }) => {
   const [shopId, setShopId] = useState('');
+  const [shopUrl, setShopUrl] = useState('');
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef(null);
   const suggestionsRef = useRef(null);
+
+  // 处理网址，确保带 https
+  const normalizeUrl = (url) => {
+    if (!url) return '';
+    let normalized = url.trim();
+    // 移除协议头
+    normalized = normalized.replace(/^(https?:\/\/)?/, '');
+    // 添加 https
+    return `https://${normalized}`;
+  };
 
   // 处理输入变化
   const handleInputChange = (e) => {
@@ -83,7 +94,9 @@ const ShopIdInput = ({ onSubmit, disabled }) => {
       return;
     }
 
-    onSubmit(trimmed);
+    // 处理网址并传递
+    const normalizedUrl = normalizeUrl(shopUrl);
+    onSubmit(trimmed, normalizedUrl);
   };
 
   return (
@@ -93,7 +106,8 @@ const ShopIdInput = ({ onSubmit, disabled }) => {
 
         <div className="relative">
           <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden">
-            <div className="flex items-center">
+            {/* 店铺 ID 输入 */}
+            <div className="flex items-center border-b border-slate-100">
               <div className="pl-5 text-slate-400">
                 <Search size={22} />
               </div>
@@ -107,7 +121,24 @@ const ShopIdInput = ({ onSubmit, disabled }) => {
                 placeholder="輸入店鋪 ID"
                 disabled={disabled}
                 autoComplete="off"
-                className="flex-1 px-4 py-5 text-lg text-slate-700 placeholder-slate-400 bg-transparent outline-none disabled:opacity-50"
+                className="flex-1 px-4 py-4 text-lg text-slate-700 placeholder-slate-400 bg-transparent outline-none disabled:opacity-50"
+              />
+            </div>
+
+            {/* 店铺网址输入 */}
+            <div className="flex items-center">
+              <div className="pl-5 text-slate-400">
+                <Link size={22} />
+              </div>
+
+              <input
+                type="text"
+                value={shopUrl}
+                onChange={(e) => setShopUrl(e.target.value)}
+                placeholder="輸入店鋪網址（選填）"
+                disabled={disabled}
+                autoComplete="off"
+                className="flex-1 px-4 py-4 text-lg text-slate-700 placeholder-slate-400 bg-transparent outline-none disabled:opacity-50"
               />
 
               <button

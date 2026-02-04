@@ -46,6 +46,9 @@ export async function saveAsHtml(selector = '#report-content', filename = 'ShopV
   // 克隆元素
   const clone = element.cloneNode(true);
 
+  // 移除不需要导出的元素（重新分析按钮、下载按钮等）
+  clone.querySelectorAll('button').forEach(btn => btn.closest('div.flex')?.remove() || btn.remove());
+
   // 将图片转为 base64
   const images = clone.querySelectorAll('img');
   await Promise.all(
@@ -93,8 +96,31 @@ export async function saveAsHtml(selector = '#report-content', filename = 'ShopV
 }
 
 /**
- * 生成报告（保存为 HTML）
+ * 从网址中提取简短名称用于文件名
  */
-export async function generateReportImage() {
-  await saveAsHtml('#report-content', 'ShopVidi_Report.html');
+function extractNameFromUrl(url) {
+  if (!url) return '';
+  return url
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
+    .replace(/[^a-zA-Z0-9\u4e00-\u9fa5.-]/g, '_')
+    .slice(0, 50);
+}
+
+/**
+ * 生成报告（保存为 HTML）
+ * @param {string} shopId - 店铺 ID
+ * @param {string} shopUrl - 店铺网址
+ */
+export async function generateReportImage(shopId = '', shopUrl = '') {
+  // 生成文件名：优先用 URL，其次用 ID，都没有则用"匿名"
+  let identifier = '匿名';
+  if (shopUrl) {
+    identifier = extractNameFromUrl(shopUrl);
+  } else if (shopId) {
+    identifier = shopId;
+  }
+
+  const filename = `ShopVidi_${identifier}.html`;
+  await saveAsHtml('#report-content', filename);
 }
